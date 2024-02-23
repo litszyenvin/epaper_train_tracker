@@ -61,10 +61,24 @@ try:
     logging.info("4.Drawing on the Horizontal image...")
     Himage = Image.new('1', (epd.height, epd.width), 255)  # 255: clear the frame
     draw = ImageDraw.Draw(Himage)
-    draw.text((10, 0), train_data[0]['destination'], font = font18, fill = 0)
-    draw.text((30, 0), train_data[0]['departure_time'], font = font18, fill = 0)
-    draw.text((10, 30), train_data[1]['destination'], font = font18, fill = 0)
-    draw.text((10, 30), train_data[1]['departure_time'], font = font18, fill = 0)
+
+
+    destination_text = []
+    train_time_text = []
+    if train_data:
+        for train in train_data:
+            destination_text_line = (f"Destination: {train['destination']}")
+            train_time_text_line = (f"{train['departure_time']}---->{train['arrival_time']} ({train['journey_length']} minutes) [{train['departure_status']}]")
+            destination_text.append(destination_text_line)
+            train_time_text.append(train_time_text_line)
+            # Modified formatting for desired output
+        else:
+            print("Error retrieving train information.")
+
+    draw.text((10, 0), destination_text[0], font = font18, fill = 0)
+    draw.text((10, 30), train_time_text[0], font = font18, fill = 0)
+    draw.text((10, 60), destination_text[1], font = font18, fill = 0)
+    draw.text((10, 90), train_time_text[1], font = font18, fill = 0)
     epd.display_Base(epd.getbuffer(Himage))
     time.sleep(2)
 
@@ -89,13 +103,9 @@ try:
     #     num = num + 1
     #     if(num == 10):
     #         break
-    
-
-
 
     logging.info("Clear...")
     epd.init()   
-    epd.Clear()
     logging.info("Goto Sleep...")
     epd.sleep()
         
