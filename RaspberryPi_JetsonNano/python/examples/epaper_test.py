@@ -22,6 +22,20 @@ logging.basicConfig(level=logging.DEBUG)
 
 try:
 
+    logging.info("starting to pull train info")
+    url_head = "https://api.rtt.io/api/v1/json/search/"
+    origin = 'SAC'
+    destination = 'STP'
+    username = "rttapi_litszyenvin"
+    password = "bec5d38d598f2a3518962fedf8345569696cb0bf"
+    number_of_trains = 4
+    current_datetime = datetime.now()
+    formatted_datetime = current_datetime.strftime("%Y/%m/%d/%H%M")
+    url = url_head + origin + '/to/' + destination +'/'+ formatted_datetime
+    # url = 'https://api.rtt.io/api/v1/json/search/SAC/to/STP/2024/02/21/1310'
+    train_data = read_https_endpoint(number_of_trains, url, username, password)
+    logging.info("finished to pull train info")
+    
     logging.info("epd2in7 Demo")   
     epd = epd2in7_V2.EPD()
     
@@ -47,24 +61,11 @@ try:
     logging.info("4.Drawing on the Horizontal image...")
     Himage = Image.new('1', (epd.height, epd.width), 255)  # 255: clear the frame
     draw = ImageDraw.Draw(Himage)
-    draw.text((10, 0), 'hello world', font = font24, fill = 0)
+    draw.text((10, 0), train_data[0]['destination'], font = font24, fill = 0)
+    draw.text((20, 0), train_data[1]['destination'], font = font24, fill = 0)
     epd.display_Base(epd.getbuffer(Himage))
     time.sleep(2)
 
-    logging.info("starting to pull train info")
-    url_head = "https://api.rtt.io/api/v1/json/search/"
-    origin = 'SAC'
-    destination = 'STP'
-    username = "rttapi_litszyenvin"
-    password = "bec5d38d598f2a3518962fedf8345569696cb0bf"
-    number_of_trains = 4
-
-    current_datetime = datetime.now()
-    formatted_datetime = current_datetime.strftime("%Y/%m/%d/%H%M")
-    url = url_head + origin + '/to/' + destination +'/'+ formatted_datetime
-    # url = 'https://api.rtt.io/api/v1/json/search/SAC/to/STP/2024/02/21/1310'
-    train_data = read_https_endpoint(number_of_trains, url, username, password)
-    logging.info("finished to pull train info")
     # # partial update
     # logging.info("5.show time")
     # epd.init()   
