@@ -131,8 +131,8 @@ max_calls = 1  # Modify this to control function calls per cycle
 def button_press_handler():
     global counter
     if counter < max_calls:
-        disp_train_info()
         counter += 1
+        disp_train_info()
     else:
         counter = 0  # Reset counter for next cycle
 
@@ -140,5 +140,7 @@ def button_press_handler():
 button.when_pressed = button_press_handler
 
 while True:
+    logging.info("wait for button")
+
     # Your main program loop
     pass
