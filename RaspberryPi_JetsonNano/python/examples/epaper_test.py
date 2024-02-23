@@ -6,6 +6,7 @@ import requests
 import json
 from datetime import datetime
 from gpiozero import Button
+import threading
 from train_tracker import read_https_endpoint, calculate_elapsed_minutes, is_later_than_current_time
 
 picdir = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'pic')
@@ -136,8 +137,15 @@ def button_press_handler():
     else:
         counter = 0  # Reset counter for next cycle
 
+def run_every_n_seconds(seconds):
+    while True:
+        disp_train_info()
+        time.sleep(seconds)
+
 # Choose your preferred option:
 button.when_pressed = button_press_handler
+thread = threading.Thread(target=run_every_n_seconds(20))
+thread.start()
 
 while True:
     logging.info("wait for button")
