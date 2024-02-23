@@ -25,8 +25,8 @@ logging.basicConfig(level=logging.DEBUG)
 
 button = Button(5)  # Replace 2 with your button's GPIO pin number
 epd = epd2in7_V2.EPD()
-font12 = ImageFont.truetype(os.path.join(picdir, 'Roboto-Bold.ttf'), 12)
-font15 = ImageFont.truetype(os.path.join(picdir, 'Roboto-Bold.ttf'), 15)
+font14 = ImageFont.truetype(os.path.join(picdir, 'Roboto-Regular.ttf'), 14)
+font16 = ImageFont.truetype(os.path.join(picdir, 'Roboto-Bold.ttf'), 16)
 font18 = ImageFont.truetype(os.path.join(picdir, 'Roboto-Bold.ttf'), 18)
 font20 = ImageFont.truetype(os.path.join(picdir, 'Roboto-Bold.ttf'), 20)
 url_head = "https://api.rtt.io/api/v1/json/search/"
@@ -76,14 +76,14 @@ def disp_train_info():
         Himage = Image.new('1', (epd.height, epd.width), 255)  # 255: clear the frame
         draw = ImageDraw.Draw(Himage)
 
-        draw.text((5, 0), destination_text[0], font = font12, fill = 0)
-        draw.text((5, 20), train_time_text[0], font = font15, fill = 0)
-        draw.text((5, 40), destination_text[1], font = font12, fill = 0)
-        draw.text((5, 60), train_time_text[1], font = font15, fill = 0)
-        draw.text((5, 80), destination_text[2], font = font12, fill = 0)
-        draw.text((5, 100), train_time_text[2], font = font15, fill = 0)
-        draw.text((5, 120), destination_text[3], font = font12, fill = 0)
-        draw.text((5, 140), train_time_text[3], font = font15, fill = 0)
+        draw.text((5, 0), destination_text[0], font = font14, fill = 0)
+        draw.text((5, 20), train_time_text[0], font = font16, fill = 0)
+        draw.text((5, 40), destination_text[1], font = font14, fill = 0)
+        draw.text((5, 60), train_time_text[1], font = font16, fill = 0)
+        draw.text((5, 80), destination_text[2], font = font14, fill = 0)
+        draw.text((5, 100), train_time_text[2], font = font16, fill = 0)
+        draw.text((5, 120), destination_text[3], font = font14, fill = 0)
+        draw.text((5, 140), train_time_text[3], font = font16, fill = 0)
         epd.display_Base(epd.getbuffer(Himage))
         # time.sleep(2)
 
@@ -142,7 +142,7 @@ def idle_disp():
 
 
 # Define the interval (in seconds) at which to run disp_train_info
-interval_seconds = 60
+interval_seconds = 10
 
 # Define a function to run disp_train_info every set number of seconds
 def run_disp_train_info():
