@@ -61,8 +61,10 @@ try:
     logging.info("4.Drawing on the Horizontal image...")
     Himage = Image.new('1', (epd.height, epd.width), 255)  # 255: clear the frame
     draw = ImageDraw.Draw(Himage)
-    draw.text((10, 0), train_data[0]['destination'], font = font24, fill = 0)
-    draw.text((20, 0), train_data[1]['destination'], font = font24, fill = 0)
+    draw.text((10, 0), train_data[0]['destination'], font = font18, fill = 0)
+    draw.text((30, 0), train_data[0]['departure_time'], font = font18, fill = 0)
+    draw.text((10, 30), train_data[1]['destination'], font = font18, fill = 0)
+    draw.text((10, 30), train_data[1]['departure_time'], font = font18, fill = 0)
     epd.display_Base(epd.getbuffer(Himage))
     time.sleep(2)
 
