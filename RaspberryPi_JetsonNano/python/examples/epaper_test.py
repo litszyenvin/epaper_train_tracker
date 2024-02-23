@@ -4,6 +4,7 @@ import sys
 import os
 import requests
 import json
+from time import sleep
 from datetime import datetime
 from gpiozero import Button
 from threading import Timer
@@ -16,7 +17,6 @@ if os.path.exists(libdir):
 
 import logging
 from waveshare_epd import epd2in7_V2
-import time
 from PIL import Image,ImageDraw,ImageFont
 import traceback
 
@@ -25,10 +25,10 @@ logging.basicConfig(level=logging.DEBUG)
 
 button = Button(5)  # Replace 2 with your button's GPIO pin number
 epd = epd2in7_V2.EPD()
-font12 = ImageFont.truetype(os.path.join(picdir, 'Roboto-Regular.ttf'), 12)
-font15 = ImageFont.truetype(os.path.join(picdir, 'Roboto-Regular.ttf'), 15)
-font18 = ImageFont.truetype(os.path.join(picdir, 'Roboto-Regular.ttf'), 18)
-font20 = ImageFont.truetype(os.path.join(picdir, 'Roboto-Regular.ttf'), 20)
+font12 = ImageFont.truetype(os.path.join(picdir, 'Roboto-Bold.ttf'), 12)
+font15 = ImageFont.truetype(os.path.join(picdir, 'Roboto-Bold.ttf'), 15)
+font18 = ImageFont.truetype(os.path.join(picdir, 'Roboto-Bold.ttf'), 18)
+font20 = ImageFont.truetype(os.path.join(picdir, 'Roboto-Bold.ttf'), 20)
 url_head = "https://api.rtt.io/api/v1/json/search/"
 origin = 'SAC'
 destination = 'STP'
@@ -141,60 +141,21 @@ def idle_disp():
         exit()
 
 
+# Define the interval (in seconds) at which to run disp_train_info
+interval_seconds = 60
 
+# Define a function to run disp_train_info every set number of seconds
+def run_disp_train_info():
+    disp_train_info()
+    Timer(interval_seconds, run_disp_train_info).start()
 
-# Initialize a variable to keep track of the current function
-current_function = disp_train_info
-
-# Initialize variables to store Timer objects
-timer_disp_train_info = None
-timer_idle_disp = None
-
-DURATION = 10
-
-# Define a function to toggle between the two functions
-def toggle_function():
-    global current_function
-    global timer_disp_train_info
-    global timer_idle_disp
-    
-    # Cancel the Timer for the inactive function
-    if current_function == disp_train_info:
-        if timer_idle_disp:
-            timer_idle_disp.cancel()
-    else:
-        if timer_disp_train_info:
-            timer_disp_train_info.cancel()
-    
-    # Toggle the current function
-    if current_function == disp_train_info:
-        current_function = idle_disp
-    else:
-        current_function = disp_train_info
-        
-    # Schedule the newly active function to run every 60 seconds
-    if current_function == disp_train_info:
-        timer_disp_train_info = Timer(DURATION, disp_train_info)
-        timer_disp_train_info.start()
-    else:
-        timer_idle_disp = Timer(DURATION, idle_disp)
-        timer_idle_disp.start()
-
-# Define a function to be called when the button is pressed
-def button_pressed():
-    toggle_function()
-    current_function()
-
-# Register the button_pressed function to be called when the button is pressed
-button.when_pressed = button_pressed
-
-# Start with the initial function scheduled to run every 60 seconds
-timer_disp_train_info = Timer(DURATION, disp_train_info)
-timer_disp_train_info.start()
+# Start running disp_train_info every set number of seconds
+run_disp_train_info()
 
 # Keep the script running
 try:
     while True:
+        sleep(5)
         pass
 except KeyboardInterrupt:
     print("Exiting...")
