@@ -48,7 +48,7 @@ try:
     font20 = ImageFont.truetype(os.path.join(picdir, 'Font.ttc'), 20)
     
     # Quick refresh
-    logging.info("Quick refresh demo")
+    # logging.info("Quick refresh demo")
     # epd.init_Fast()
 
     
@@ -58,7 +58,7 @@ try:
 
     
     # Drawing on the Horizontal image
-    logging.info("4.Drawing on the Horizontal image...")
+    # logging.info("4.Drawing on the Horizontal image...")
     Himage = Image.new('1', (epd.height, epd.width), 255)  # 255: clear the frame
     draw = ImageDraw.Draw(Himage)
 
@@ -67,7 +67,7 @@ try:
     train_time_text = []
     if train_data:
         for train in train_data:
-            destination_text_line = (f"Destination: {train['destination']}")
+            destination_text_line = (f"Destination: {train['destination']},Plat {train['departure_platform']}")
             train_time_text_line = (f"{train['departure_time']}---->{train['arrival_time']} ({train['journey_length']} minutes) [{train['departure_status']}]")
             destination_text.append(destination_text_line)
             train_time_text.append(train_time_text_line)
@@ -76,15 +76,15 @@ try:
             print("Error retrieving train information.")
 
     draw.text((5, 0), destination_text[0], font = font12, fill = 0)
-    draw.text((5, 20), train_time_text[0], font = font12, fill = 0)
+    draw.text((5, 20), train_time_text[0], font = font18, fill = 0)
     draw.text((5, 40), destination_text[1], font = font12, fill = 0)
-    draw.text((5, 60), train_time_text[1], font = font12, fill = 0)
+    draw.text((5, 60), train_time_text[1], font = font18, fill = 0)
     draw.text((5, 80), destination_text[2], font = font12, fill = 0)
-    draw.text((5, 100), train_time_text[2], font = font12, fill = 0)
+    draw.text((5, 100), train_time_text[2], font = font18, fill = 0)
     draw.text((5, 120), destination_text[3], font = font12, fill = 0)
-    draw.text((5, 140), train_time_text[3], font = font12, fill = 0)
+    draw.text((5, 140), train_time_text[3], font = font18, fill = 0)
     epd.display_Base(epd.getbuffer(Himage))
-    time.sleep(2)
+    # time.sleep(2)
 
     # # partial update
     # logging.info("5.show time")

@@ -35,6 +35,8 @@ def read_https_endpoint(number_of_trains, url, username, password):
                 else:
                     departureTime = locationDetail['gbttBookedDeparture']
 
+                departurePlatform = locationDetail['platform']
+
                 try:
                     next_day = locationDetail['gbttBookedDepartureNextDay']
                 except:
@@ -46,6 +48,7 @@ def read_https_endpoint(number_of_trains, url, username, password):
                         "destination": locationDetail['destination'][0]['description'],
                         "departure_status": "Scheduled" if not departureIsRealtime and not serviceIsCancelled else ("Real-time" if departureIsRealtime else "Cancelled"),
                         "departure_time": departureTime,
+                        "departure_platform": departurePlatform
                     }
 
                     # Get further information for arrival time and journey length
@@ -111,26 +114,26 @@ def is_later_than_current_time(hhmm_string):
     else:
         return False
 
-# url_head = "https://api.rtt.io/api/v1/json/search/"
-# origin = 'SAC'
-# destination = 'STP'
-# username = "rttapi_litszyenvin"
-# password = "bec5d38d598f2a3518962fedf8345569696cb0bf"
-# number_of_trains = 4
+url_head = "https://api.rtt.io/api/v1/json/search/"
+origin = 'SAC'
+destination = 'STP'
+username = "rttapi_litszyenvin"
+password = "bec5d38d598f2a3518962fedf8345569696cb0bf"
+number_of_trains = 4
 
-# current_datetime = datetime.now()
-# formatted_datetime = current_datetime.strftime("%Y/%m/%d/%H%M")
-# url = url_head + origin + '/to/' + destination +'/'+ formatted_datetime
-# # url = 'https://api.rtt.io/api/v1/json/search/SAC/to/STP/2024/02/21/1310'
-# train_data = read_https_endpoint(number_of_trains, url, username, password)
+current_datetime = datetime.now()
+formatted_datetime = current_datetime.strftime("%Y/%m/%d/%H%M")
+url = url_head + origin + '/to/' + destination +'/'+ formatted_datetime
+# url = 'https://api.rtt.io/api/v1/json/search/SAC/to/STP/2024/02/21/1310'
+train_data = read_https_endpoint(number_of_trains, url, username, password)
 
-# if train_data:
-#     print("Train information:")
-#     for train in train_data:
-#         print(f"Destination: {train['destination']}")
-#         # Modified formatting for desired output
-#         print(f"{train['departure_time']}---->{train['arrival_time']} ({train['journey_length']} minutes) [{train['departure_status']}]")
-# else:
-#     print("Error retrieving train information.")
+if train_data:
+    print("Train information:")
+    for train in train_data:
+        print(f"Destination: {train['destination']},Plat {train['departure_platform']}")
+        # Modified formatting for desired output
+        print(f"{train['departure_time']}---->{train['arrival_time']} ({train['journey_length']} minutes) [{train['departure_status']}]")
+else:
+    print("Error retrieving train information.")
 
 
