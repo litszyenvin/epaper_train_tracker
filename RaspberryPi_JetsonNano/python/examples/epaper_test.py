@@ -6,7 +6,7 @@ import requests
 import json
 from datetime import datetime
 from gpiozero import Button
-import threading
+from threading import Timer
 from train_tracker import read_https_endpoint, calculate_elapsed_minutes, is_later_than_current_time
 
 picdir = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'pic')
@@ -25,10 +25,10 @@ logging.basicConfig(level=logging.DEBUG)
 
 button = Button(5)  # Replace 2 with your button's GPIO pin number
 epd = epd2in7_V2.EPD()
-font12 = ImageFont.truetype(os.path.join(picdir, 'Font.ttc'), 12)
-font15 = ImageFont.truetype(os.path.join(picdir, 'Font.ttc'), 15)
-font18 = ImageFont.truetype(os.path.join(picdir, 'Font.ttc'), 18)
-font20 = ImageFont.truetype(os.path.join(picdir, 'Font.ttc'), 20)
+font12 = ImageFont.truetype(os.path.join(picdir, 'Roboto-Regular.ttf'), 12)
+font15 = ImageFont.truetype(os.path.join(picdir, 'Roboto-Regular.ttf'), 15)
+font18 = ImageFont.truetype(os.path.join(picdir, 'Roboto-Regular.ttf'), 18)
+font20 = ImageFont.truetype(os.path.join(picdir, 'Roboto-Regular.ttf'), 20)
 url_head = "https://api.rtt.io/api/v1/json/search/"
 origin = 'SAC'
 destination = 'STP'
@@ -59,13 +59,13 @@ def disp_train_info():
             else:
                 print("Error retrieving train information.")
 
-        epd.init()
+        # epd.init()
+        epd.init_Fast()
         epd.Clear()
 
         
         # Quick refresh
         # logging.info("Quick refresh demo")
-        # epd.init_Fast()
 
         
         # Normal refresh
@@ -122,29 +122,53 @@ def disp_train_info():
         epd2in7_V2.epdconfig.module_exit(cleanup=True)
         exit()
 
-counter = 0
-max_calls = 1  # Modify this to control function calls per cycle
+def idle_disp():
+    try:
+        epd.init_Fast()
+        epd.Clear()
+        Himage = Image.new('1', (epd.height, epd.width), 255)  # 255: clear the frame
+        draw = ImageDraw.Draw(Himage)
+        draw.text((50, 50), 'sleeping...', font = font20, fill = 0)
+        epd.display_Base(epd.getbuffer(Himage))
+        epd.init()   
+        epd.sleep()
+    except IOError as e:
+        logging.info(e)
+        
+    except KeyboardInterrupt:    
+        logging.info("ctrl + c:")
+        epd2in7_V2.epdconfig.module_exit(cleanup=True)
+        exit()
 
-def button_press_handler():
-    global counter
-    if counter < max_calls:
-        counter += 1
-        disp_train_info()
+
+
+
+# Initialize a variable to keep track of the current function
+current_function = disp_train_info
+
+# Define a function to toggle between the two functions
+def toggle_function():
+    global current_function
+    if current_function == disp_train_info:
+        current_function = idle_disp
     else:
-        counter = 0  # Reset counter for next cycle
+        current_function = disp_train_info
 
-def run_every_n_seconds(seconds):
+# Define a function to be called when the button is pressed
+def button_pressed():
+    toggle_function()
+    current_function()
+
+# Register the button_pressed function to be called when the button is pressed
+button.when_pressed = button_pressed
+
+# Schedule the functions to run every 60 seconds
+Timer(60, disp_train_info).start()
+Timer(60, idle_disp).start()
+
+# Keep the script running
+try:
     while True:
-        disp_train_info()
-        time.sleep(seconds)
-
-# Choose your preferred option:
-button.when_pressed = button_press_handler
-thread = threading.Thread(target=run_every_n_seconds(20))
-thread.start()
-
-while True:
-    logging.info("wait for button")
-
-    # Your main program loop
-    pass
+        pass
+except KeyboardInterrupt:
+    print("Exiting...")
