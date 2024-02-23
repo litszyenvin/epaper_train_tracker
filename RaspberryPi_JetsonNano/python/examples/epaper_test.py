@@ -24,33 +24,29 @@ import traceback
 logging.basicConfig(level=logging.DEBUG)
 
 button = Button(5)  # Replace 2 with your button's GPIO pin number
+epd = epd2in7_V2.EPD()
+font12 = ImageFont.truetype(os.path.join(picdir, 'Font.ttc'), 12)
+font12 = ImageFont.truetype(os.path.join(picdir, 'Font.ttc'), 15)
+font18 = ImageFont.truetype(os.path.join(picdir, 'Font.ttc'), 18)
+font20 = ImageFont.truetype(os.path.join(picdir, 'Font.ttc'), 20)
+url_head = "https://api.rtt.io/api/v1/json/search/"
+origin = 'SAC'
+destination = 'STP'
+username = "rttapi_litszyenvin"
+password = "bec5d38d598f2a3518962fedf8345569696cb0bf"
+number_of_trains = 4
 
 def disp_train_info():
     try:
         logging.info("starting to pull train info")
-        url_head = "https://api.rtt.io/api/v1/json/search/"
-        origin = 'SAC'
-        destination = 'STP'
-        username = "rttapi_litszyenvin"
-        password = "bec5d38d598f2a3518962fedf8345569696cb0bf"
-        number_of_trains = 4
         current_datetime = datetime.now()
         formatted_datetime = current_datetime.strftime("%Y/%m/%d/%H%M")
         url = url_head + origin + '/to/' + destination +'/'+ formatted_datetime
         # url = 'https://api.rtt.io/api/v1/json/search/SAC/to/STP/2024/02/21/1310'
         train_data = read_https_endpoint(number_of_trains, url, username, password)
-        logging.info("finished to pull train info")
-        
-        logging.info("epd2in7 Demo")   
-        epd = epd2in7_V2.EPD()
-        
-        '''2Gray(Black and white) display'''
-        logging.info("init and Clear")
         epd.init()
         epd.Clear()
-        font12 = ImageFont.truetype(os.path.join(picdir, 'Font.ttc'), 12)
-        font18 = ImageFont.truetype(os.path.join(picdir, 'Font.ttc'), 18)
-        font20 = ImageFont.truetype(os.path.join(picdir, 'Font.ttc'), 20)
+
         
         # Quick refresh
         # logging.info("Quick refresh demo")
@@ -58,8 +54,6 @@ def disp_train_info():
 
         
         # Normal refresh
-        logging.info("Normal refresh demo")
-        epd.init()
 
         
         # Drawing on the Horizontal image
@@ -81,13 +75,13 @@ def disp_train_info():
                 print("Error retrieving train information.")
 
         draw.text((5, 0), destination_text[0], font = font12, fill = 0)
-        draw.text((5, 20), train_time_text[0], font = font18, fill = 0)
+        draw.text((5, 20), train_time_text[0], font = font15, fill = 0)
         draw.text((5, 40), destination_text[1], font = font12, fill = 0)
-        draw.text((5, 60), train_time_text[1], font = font18, fill = 0)
+        draw.text((5, 60), train_time_text[1], font = font15, fill = 0)
         draw.text((5, 80), destination_text[2], font = font12, fill = 0)
-        draw.text((5, 100), train_time_text[2], font = font18, fill = 0)
+        draw.text((5, 100), train_time_text[2], font = font15, fill = 0)
         draw.text((5, 120), destination_text[3], font = font12, fill = 0)
-        draw.text((5, 140), train_time_text[3], font = font18, fill = 0)
+        draw.text((5, 140), train_time_text[3], font = font15, fill = 0)
         epd.display_Base(epd.getbuffer(Himage))
         # time.sleep(2)
 
@@ -113,9 +107,9 @@ def disp_train_info():
         #     if(num == 10):
         #         break
 
-        logging.info("Clear...")
+        # logging.info("Clear...")
         epd.init()   
-        logging.info("Goto Sleep...")
+        # logging.info("Goto Sleep...")
         epd.sleep()
             
     except IOError as e:
