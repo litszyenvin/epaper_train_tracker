@@ -19,12 +19,10 @@ import time
 from PIL import Image,ImageDraw,ImageFont
 import traceback
 
-btn1 = Button(5)                              # assign each button to a variable
-btn2 = Button(6)                              # by passing in the pin number
-btn3 = Button(13)                             # associated with the button
-btn4 = Button(19)
 
 logging.basicConfig(level=logging.DEBUG)
+
+button = Button(5)  # Replace 2 with your button's GPIO pin number
 
 def disp_train_info():
     try:
@@ -127,7 +125,20 @@ def disp_train_info():
         epd2in7_V2.epdconfig.module_exit(cleanup=True)
         exit()
 
-btn1.when_pressed = disp_train_info()
-btn2.when_pressed = disp_train_info()
-btn3.when_pressed = disp_train_info()
-btn4.when_pressed = disp_train_info()
+counter = 0
+max_calls = 1  # Modify this to control function calls per cycle
+
+def button_press_handler():
+    global counter
+    if counter < max_calls:
+        disp_train_info()
+        counter += 1
+    else:
+        counter = 0  # Reset counter for next cycle
+
+# Choose your preferred option:
+button.when_pressed = button_press_handler
+
+while True:
+    # Your main program loop
+    pass
