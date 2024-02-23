@@ -142,7 +142,7 @@ def idle_disp():
 
 
 # Define the interval (in seconds) at which to run disp_train_info
-interval_seconds = 10
+interval_seconds = 60
 
 # Define a function to run disp_train_info every set number of seconds
 def run_disp_train_info():
