@@ -2,6 +2,11 @@
 # -*- coding:utf-8 -*-
 import sys
 import os
+import requests
+import json
+from datetime import datetime
+from train_tracker import read_https_endpoint, calculate_elapsed_minutes, is_later_than_current_time
+
 picdir = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'pic')
 libdir = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'lib')
 if os.path.exists(libdir):
@@ -45,7 +50,21 @@ try:
     draw.text((10, 0), 'hello world', font = font24, fill = 0)
     epd.display_Base(epd.getbuffer(Himage))
     time.sleep(2)
-    
+
+    logging.info("starting to pull train info")
+    url_head = "https://api.rtt.io/api/v1/json/search/"
+    origin = 'SAC'
+    destination = 'STP'
+    username = "rttapi_litszyenvin"
+    password = "bec5d38d598f2a3518962fedf8345569696cb0bf"
+    number_of_trains = 4
+
+    current_datetime = datetime.now()
+    formatted_datetime = current_datetime.strftime("%Y/%m/%d/%H%M")
+    url = url_head + origin + '/to/' + destination +'/'+ formatted_datetime
+    # url = 'https://api.rtt.io/api/v1/json/search/SAC/to/STP/2024/02/21/1310'
+    train_data = read_https_endpoint(number_of_trains, url, username, password)
+    logging.info("finished to pull train info")
     # # partial update
     # logging.info("5.show time")
     # epd.init()   
