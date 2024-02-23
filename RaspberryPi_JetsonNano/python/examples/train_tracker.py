@@ -46,7 +46,7 @@ def read_https_endpoint(number_of_trains, url, username, password):
                     # Extract relevant information
                     train_info = {
                         "destination": locationDetail['destination'][0]['description'],
-                        "departure_status": "Scheduled" if not departureIsRealtime and not serviceIsCancelled else ("Real-time" if departureIsRealtime else "Cancelled"),
+                        "departure_status": "Scheduled" if not departureIsRealtime and not serviceIsCancelled else ("Live" if departureIsRealtime else "Cancelled"),
                         "departure_time": departureTime,
                         "departure_platform": departurePlatform
                     }

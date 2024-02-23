@@ -52,7 +52,7 @@ def disp_train_info():
         if train_data:
             for train in train_data:
                 destination_text_line = (f"Destination: {train['destination']},Plat {train['departure_platform']}")
-                train_time_text_line = (f"{train['departure_time']}---->{train['arrival_time']} ({train['journey_length']} minutes) [{train['departure_status']}]")
+                train_time_text_line = (f"{train['departure_time']}---->{train['arrival_time']} ({train['journey_length']} min) [{train['departure_status']}]")
                 destination_text.append(destination_text_line)
                 train_time_text.append(train_time_text_line)
                 # Modified formatting for desired output
@@ -146,13 +146,39 @@ def idle_disp():
 # Initialize a variable to keep track of the current function
 current_function = disp_train_info
 
+# Initialize variables to store Timer objects
+timer_disp_train_info = None
+timer_idle_disp = None
+
+DURATION = 10
+
 # Define a function to toggle between the two functions
 def toggle_function():
     global current_function
+    global timer_disp_train_info
+    global timer_idle_disp
+    
+    # Cancel the Timer for the inactive function
+    if current_function == disp_train_info:
+        if timer_idle_disp:
+            timer_idle_disp.cancel()
+    else:
+        if timer_disp_train_info:
+            timer_disp_train_info.cancel()
+    
+    # Toggle the current function
     if current_function == disp_train_info:
         current_function = idle_disp
     else:
         current_function = disp_train_info
+        
+    # Schedule the newly active function to run every 60 seconds
+    if current_function == disp_train_info:
+        timer_disp_train_info = Timer(DURATION, disp_train_info)
+        timer_disp_train_info.start()
+    else:
+        timer_idle_disp = Timer(DURATION, idle_disp)
+        timer_idle_disp.start()
 
 # Define a function to be called when the button is pressed
 def button_pressed():
@@ -162,9 +188,9 @@ def button_pressed():
 # Register the button_pressed function to be called when the button is pressed
 button.when_pressed = button_pressed
 
-# Schedule the functions to run every 60 seconds
-Timer(60, disp_train_info).start()
-Timer(60, idle_disp).start()
+# Start with the initial function scheduled to run every 60 seconds
+timer_disp_train_info = Timer(DURATION, disp_train_info)
+timer_disp_train_info.start()
 
 # Keep the script running
 try:
