@@ -43,9 +43,9 @@ try:
     logging.info("init and Clear")
     epd.init()
     epd.Clear()
-    font24 = ImageFont.truetype(os.path.join(picdir, 'Font.ttc'), 24)
+    font12 = ImageFont.truetype(os.path.join(picdir, 'Font.ttc'), 12)
     font18 = ImageFont.truetype(os.path.join(picdir, 'Font.ttc'), 18)
-    font35 = ImageFont.truetype(os.path.join(picdir, 'Font.ttc'), 35)
+    font20 = ImageFont.truetype(os.path.join(picdir, 'Font.ttc'), 20)
     
     # Quick refresh
     logging.info("Quick refresh demo")
@@ -75,10 +75,14 @@ try:
         else:
             print("Error retrieving train information.")
 
-    draw.text((10, 0), destination_text[0], font = font18, fill = 0)
-    draw.text((10, 30), train_time_text[0], font = font18, fill = 0)
-    draw.text((10, 60), destination_text[1], font = font18, fill = 0)
-    draw.text((10, 90), train_time_text[1], font = font18, fill = 0)
+    draw.text((5, 0), destination_text[0], font = font12, fill = 0)
+    draw.text((5, 20), train_time_text[0], font = font12, fill = 0)
+    draw.text((5, 40), destination_text[1], font = font12, fill = 0)
+    draw.text((5, 60), train_time_text[1], font = font12, fill = 0)
+    draw.text((5, 80), destination_text[2], font = font12, fill = 0)
+    draw.text((5, 100), train_time_text[2], font = font12, fill = 0)
+    draw.text((5, 120), destination_text[3], font = font12, fill = 0)
+    draw.text((5, 140), train_time_text[3], font = font12, fill = 0)
     epd.display_Base(epd.getbuffer(Himage))
     time.sleep(2)
 
