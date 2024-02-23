@@ -28,7 +28,6 @@ logging.basicConfig(level=logging.DEBUG)
 
 def disp_train_info():
     try:
-
         logging.info("starting to pull train info")
         url_head = "https://api.rtt.io/api/v1/json/search/"
         origin = 'SAC'
@@ -128,7 +127,7 @@ def disp_train_info():
         epd2in7_V2.epdconfig.module_exit(cleanup=True)
         exit()
 
-btn1.when_pressed = disp_train_info
-btn2.when_pressed = disp_train_info
-btn3.when_pressed = disp_train_info
-btn4.when_pressed = disp_train_info
+btn1.when_pressed = disp_train_info()
+btn2.when_pressed = disp_train_info()
+btn3.when_pressed = disp_train_info()
+btn4.when_pressed = disp_train_info()
