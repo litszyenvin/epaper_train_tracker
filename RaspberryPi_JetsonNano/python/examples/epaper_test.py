@@ -44,6 +44,21 @@ def disp_train_info():
         url = url_head + origin + '/to/' + destination +'/'+ formatted_datetime
         # url = 'https://api.rtt.io/api/v1/json/search/SAC/to/STP/2024/02/21/1310'
         train_data = read_https_endpoint(number_of_trains, url, username, password)
+        
+
+
+        destination_text = []
+        train_time_text = []
+        if train_data:
+            for train in train_data:
+                destination_text_line = (f"Destination: {train['destination']},Plat {train['departure_platform']}")
+                train_time_text_line = (f"{train['departure_time']}---->{train['arrival_time']} ({train['journey_length']} minutes) [{train['departure_status']}]")
+                destination_text.append(destination_text_line)
+                train_time_text.append(train_time_text_line)
+                # Modified formatting for desired output
+            else:
+                print("Error retrieving train information.")
+
         epd.init()
         epd.Clear()
 
@@ -60,19 +75,6 @@ def disp_train_info():
         # logging.info("4.Drawing on the Horizontal image...")
         Himage = Image.new('1', (epd.height, epd.width), 255)  # 255: clear the frame
         draw = ImageDraw.Draw(Himage)
-
-
-        destination_text = []
-        train_time_text = []
-        if train_data:
-            for train in train_data:
-                destination_text_line = (f"Destination: {train['destination']},Plat {train['departure_platform']}")
-                train_time_text_line = (f"{train['departure_time']}---->{train['arrival_time']} ({train['journey_length']} minutes) [{train['departure_status']}]")
-                destination_text.append(destination_text_line)
-                train_time_text.append(train_time_text_line)
-                # Modified formatting for desired output
-            else:
-                print("Error retrieving train information.")
 
         draw.text((5, 0), destination_text[0], font = font12, fill = 0)
         draw.text((5, 20), train_time_text[0], font = font15, fill = 0)
