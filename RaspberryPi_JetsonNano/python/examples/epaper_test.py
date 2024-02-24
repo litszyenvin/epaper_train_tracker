@@ -8,7 +8,7 @@ from time import sleep
 from datetime import datetime
 from gpiozero import Button
 from threading import Timer
-from train_tracker import read_https_endpoint, calculate_elapsed_minutes, is_later_than_current_time
+from train_tracker import collect_train_data, calculate_elapsed_minutes, is_later_than_current_time
 
 picdir = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'pic')
 libdir = os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), 'lib')
@@ -19,7 +19,6 @@ import logging
 from waveshare_epd import epd2in7_V2
 from PIL import Image,ImageDraw,ImageFont
 import traceback
-
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -42,10 +41,7 @@ def disp_train_info():
         current_datetime = datetime.now()
         formatted_datetime = current_datetime.strftime("%Y/%m/%d/%H%M")
         url = url_head + origin + '/to/' + destination +'/'+ formatted_datetime
-        # url = 'https://api.rtt.io/api/v1/json/search/SAC/to/STP/2024/02/21/1310'
-        train_data = read_https_endpoint(number_of_trains, url, username, password)
-        
-
+        train_data = collect_train_data(number_of_trains, url, username, password)
 
         destination_text = []
         train_time_text = []
@@ -58,24 +54,15 @@ def disp_train_info():
                 # Modified formatting for desired output
             else:
                 print("Error retrieving train information.")
-
         # epd.init()
         epd.init_Fast()
         epd.Clear()
-
-        
-        # Quick refresh
-        # logging.info("Quick refresh demo")
-
-        
-        # Normal refresh
-
         
         # Drawing on the Horizontal image
         # logging.info("4.Drawing on the Horizontal image...")
         Himage = Image.new('1', (epd.height, epd.width), 255)  # 255: clear the frame
         draw = ImageDraw.Draw(Himage)
-
+        # TODO: case when less than 4 trains
         draw.text((5, 0), destination_text[0], font = font14, fill = 0)
         draw.text((5, 20), train_time_text[0], font = font16, fill = 0)
         draw.text((5, 40), destination_text[1], font = font14, fill = 0)
@@ -85,29 +72,6 @@ def disp_train_info():
         draw.text((5, 120), destination_text[3], font = font14, fill = 0)
         draw.text((5, 140), train_time_text[3], font = font16, fill = 0)
         epd.display_Base(epd.getbuffer(Himage))
-        # time.sleep(2)
-
-        # # partial update
-        # logging.info("5.show time")
-        # epd.init()   
-        # '''
-        # # If you didn't use the EPD_2IN7_V2_Display_Base() function to refresh the image before,
-        # # use the EPD_2IN7_V2_Display_Base_color() function to refresh the background color, 
-        # # otherwise the background color will be garbled 
-        # '''
-        # # epd.display_Base_color(0xff)
-        # # Himage = Image.new('1', (epd.height ,epd.width), 0xff)
-        # # draw = ImageDraw.Draw(time_image)
-        # num = 0
-        # while (True):
-        #     draw.rectangle((10, 110, 120, 150), fill = 255)
-        #     draw.text((10, 110), time.strftime('%H:%M:%S'), font = font24, fill = 0)
-        #     newimage = Himage.crop([10, 110, 120, 150])
-        #     Himage.paste(newimage, (10,110)) 
-        #     epd.display_Partial(epd.getbuffer(Himage),110, epd.height - 120, 150, epd.height - 10)
-        #     num = num + 1
-        #     if(num == 10):
-        #         break
 
         # logging.info("Clear...")
         epd.init()   
@@ -140,19 +104,14 @@ def idle_disp():
         epd2in7_V2.epdconfig.module_exit(cleanup=True)
         exit()
 
+INTERVAL_SECONDS = 60
 
-# Define the interval (in seconds) at which to run disp_train_info
-interval_seconds = 60
-
-# Define a function to run disp_train_info every set number of seconds
 def run_disp_train_info():
     disp_train_info()
-    Timer(interval_seconds, run_disp_train_info).start()
+    Timer(INTERVAL_SECONDS, run_disp_train_info).start()
 
-# Start running disp_train_info every set number of seconds
 run_disp_train_info()
 
-# Keep the script running
 try:
     while True:
         sleep(5)
