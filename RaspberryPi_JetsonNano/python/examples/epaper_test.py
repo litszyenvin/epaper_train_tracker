@@ -22,6 +22,7 @@ import traceback
 
 logging.basicConfig(level=logging.DEBUG)
 
+INTERVAL_SECONDS = 60
 button = Button(5)  # Replace 2 with your button's GPIO pin number
 epd = epd2in7_V2.EPD()
 font14 = ImageFont.truetype(os.path.join(picdir, 'Roboto-Regular.ttf'), 14)
@@ -104,17 +105,17 @@ def idle_disp():
         epd2in7_V2.epdconfig.module_exit(cleanup=True)
         exit()
 
-INTERVAL_SECONDS = 60
 
 def run_disp_train_info():
     disp_train_info()
     Timer(INTERVAL_SECONDS, run_disp_train_info).start()
 
-run_disp_train_info()
-
-try:
-    while True:
-        sleep(5)
-        pass
-except KeyboardInterrupt:
-    print("Exiting...")
+if __name__ == "__main__":
+    sleep(3)
+    run_disp_train_info()
+    try:
+        while True:
+            sleep(5)
+            pass
+    except KeyboardInterrupt:
+        print("Exiting...")
