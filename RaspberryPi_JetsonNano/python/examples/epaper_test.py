@@ -30,8 +30,8 @@ font16 = ImageFont.truetype(os.path.join(picdir, 'Roboto-Bold.ttf'), 16)
 font18 = ImageFont.truetype(os.path.join(picdir, 'Roboto-Bold.ttf'), 18)
 font20 = ImageFont.truetype(os.path.join(picdir, 'Roboto-Bold.ttf'), 20)
 url_head = "https://api.rtt.io/api/v1/json/search/"
-origin = 'SAC'
-destination = 'STP'
+ORIGIN = 'SAC'
+DESTINATION = 'STP'
 username = "rttapi_litszyenvin"
 password = "bec5d38d598f2a3518962fedf8345569696cb0bf"
 number_of_trains = 4
@@ -41,7 +41,7 @@ def disp_train_info():
         logging.info("starting to pull train info")
         current_datetime = datetime.now()
         formatted_datetime = current_datetime.strftime("%Y/%m/%d/%H%M")
-        url = url_head + origin + '/to/' + destination +'/'+ formatted_datetime
+        url = url_head + ORIGIN + '/to/' + DESTINATION +'/'+ formatted_datetime
         train_data = collect_train_data(number_of_trains, url, username, password)
 
         destination_text = []
@@ -65,9 +65,9 @@ def disp_train_info():
         draw = ImageDraw.Draw(Himage)
         # TODO: case when less than 4 trains        
         y_position = 0
-        for destination, train_time in zip(destination_text, train_time_text):
-            draw.text((5, y_position), destination, font=font14, fill=0)
-            draw.text((5, y_position + 20), train_time, font=font16, fill=0)
+        for destination_print, train_time_print in zip(destination_text, train_time_text):
+            draw.text((5, y_position), destination_print, font=font14, fill=0)
+            draw.text((5, y_position + 20), train_time_print, font=font16, fill=0)
             y_position += 40
         
         draw.text((5, 160), ('updated:' + formatted_datetime), font = font14, fill = 0)
