@@ -72,6 +72,7 @@ def disp_train_info():
         draw.text((5, 100), train_time_text[2], font = font16, fill = 0)
         draw.text((5, 120), destination_text[3], font = font14, fill = 0)
         draw.text((5, 140), train_time_text[3], font = font16, fill = 0)
+        draw.text((5, 160), ('updated:' + formatted_datetime), font = font14, fill = 0)
         epd.display_Base(epd.getbuffer(Himage))
 
         # logging.info("Clear...")
