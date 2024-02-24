@@ -63,15 +63,13 @@ def disp_train_info():
         # logging.info("4.Drawing on the Horizontal image...")
         Himage = Image.new('1', (epd.height, epd.width), 255)  # 255: clear the frame
         draw = ImageDraw.Draw(Himage)
-        # TODO: case when less than 4 trains
-        draw.text((5, 0), destination_text[0], font = font14, fill = 0)
-        draw.text((5, 20), train_time_text[0], font = font16, fill = 0)
-        draw.text((5, 40), destination_text[1], font = font14, fill = 0)
-        draw.text((5, 60), train_time_text[1], font = font16, fill = 0)
-        draw.text((5, 80), destination_text[2], font = font14, fill = 0)
-        draw.text((5, 100), train_time_text[2], font = font16, fill = 0)
-        draw.text((5, 120), destination_text[3], font = font14, fill = 0)
-        draw.text((5, 140), train_time_text[3], font = font16, fill = 0)
+        # TODO: case when less than 4 trains        
+        y_position = 0
+        for destination, train_time in zip(destination_text, train_time_text):
+            draw.text((5, y_position), destination, font=font14, fill=0)
+            draw.text((5, y_position + 20), train_time, font=font16, fill=0)
+            y_position += 40
+        
         draw.text((5, 160), ('updated:' + formatted_datetime), font = font14, fill = 0)
         epd.display_Base(epd.getbuffer(Himage))
 
