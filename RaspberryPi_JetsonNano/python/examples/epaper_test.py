@@ -43,35 +43,43 @@ def disp_train_info():
         formatted_datetime = current_datetime.strftime("%Y/%m/%d/%H%M")
         url = url_head + ORIGIN + '/to/' + DESTINATION +'/'+ formatted_datetime
         train_data = collect_train_data(number_of_trains, url, username, password)
-
-        destination_text = []
-        train_time_text = []
-        if train_data:
-            for train in train_data:
-                destination_text_line = (f"Destination: {train['destination']},Plat {train['departure_platform']}")
-                train_time_text_line = (f"{train['departure_time']}---->{train['arrival_time']} ({train['journey_length']} min) [{train['departure_status']}]")
-                destination_text.append(destination_text_line)
-                train_time_text.append(train_time_text_line)
-                # Modified formatting for desired output
-            else:
-                print("Error retrieving train information.")
-        # epd.init()
         epd.init_Fast()
         epd.Clear()
         
-        # Drawing on the Horizontal image
-        # logging.info("4.Drawing on the Horizontal image...")
-        Himage = Image.new('1', (epd.height, epd.width), 255)  # 255: clear the frame
-        draw = ImageDraw.Draw(Himage)
-        # TODO: case when less than 4 trains        
-        y_position = 0
-        for destination_print, train_time_print in zip(destination_text, train_time_text):
-            draw.text((5, y_position), destination_print, font=font14, fill=0)
-            draw.text((5, y_position + 20), train_time_print, font=font16, fill=0)
-            y_position += 40
-        
-        draw.text((5, 160), ('updated:' + formatted_datetime), font = font14, fill = 0)
-        epd.display_Base(epd.getbuffer(Himage))
+        if len(train_data) == 0: # if train data is empty
+            Himage = Image.new('1', (epd.height, epd.width), 255)  # 255: clear the frame
+            draw = ImageDraw.Draw(Himage)
+            draw.text((5, 0), "Could not retrive train information...", font=font14, fill=0)
+            draw.text((5, 160), ('updated:' + formatted_datetime), font = font14, fill = 0)
+            epd.display_Base(epd.getbuffer(Himage))
+
+        else: #if train_data is not empty
+            destination_text = []
+            train_time_text = []
+            if train_data:
+                for train in train_data:
+                    destination_text_line = (f"Destination: {train['destination']},Plat {train['departure_platform']}")
+                    train_time_text_line = (f"{train['departure_time']}---->{train['arrival_time']} ({train['journey_length']} min) [{train['departure_status']}]")
+                    destination_text.append(destination_text_line)
+                    train_time_text.append(train_time_text_line)
+                    # Modified formatting for desired output
+                else:
+                    print("Error retrieving train information.")
+            # epd.init()
+            
+            
+            # Drawing on the Horizontal image
+            # logging.info("4.Drawing on the Horizontal image...")
+            Himage = Image.new('1', (epd.height, epd.width), 255)  # 255: clear the frame
+            draw = ImageDraw.Draw(Himage)
+            y_position = 0
+            for destination_print, train_time_print in zip(destination_text, train_time_text):
+                draw.text((5, y_position), destination_print, font=font14, fill=0)
+                draw.text((5, y_position + 20), train_time_print, font=font16, fill=0)
+                y_position += 40
+            
+            draw.text((5, 160), ('updated:' + formatted_datetime), font = font14, fill = 0)
+            epd.display_Base(epd.getbuffer(Himage))
 
         # logging.info("Clear...")
         epd.init()   

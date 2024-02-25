@@ -30,13 +30,13 @@ def collect_train_data(number_of_trains, url, username, password, max_retries=3,
                     departureIsRealtime = False
                     serviceIsCancelled = False
                     if 'cancelReasonCode' in locationDetail:
-                        departureTime = locationDetail['gbttBookedDeparture']
+                        departureTime = locationDetail['gbttBookedArrival']
                         serviceIsCancelled = True
                     elif 'realtimeDeparture' in locationDetail:
-                        departureTime = locationDetail['realtimeDeparture']
+                        departureTime = locationDetail['realtimeArrival']
                         departureIsRealtime = True
                     else:
-                        departureTime = locationDetail['gbttBookedDeparture']
+                        departureTime = locationDetail['gbttBookedArrival']
 
                     departurePlatform = locationDetail['platform']
 
@@ -64,7 +64,11 @@ def collect_train_data(number_of_trains, url, username, password, max_retries=3,
                             locations = train_services_data['locations']
                             for location in locations:
                                 if location['description'] == "St Pancras International":
-                                    arrivalTime = location['gbttBookedArrival'] #TODO: case for cancelled and realtime
+                                    if 'realtimeArrival' in location:
+                                        arrivalTime = location['realtimeArrival']
+                                    else:
+                                        arrivalTime = location['gbttBookedArrival']
+                                    
                                     journeyLength = calculate_elapsed_minutes(departureTime, arrivalTime)
 
                                     # Add arrival time and journey length to train info
@@ -93,7 +97,8 @@ def collect_train_data(number_of_trains, url, username, password, max_retries=3,
             time.sleep(retry_delay)
 
     # Return empty list if max retries reached
-    return []
+    else:
+        return []
 
 def calculate_elapsed_minutes(start, end):
     start_hours = int(start[:2])
@@ -144,7 +149,7 @@ if __name__ == "__main__":
             print(f"Destination: {train['destination']},Plat {train['departure_platform']}")
             # Modified formatting for desired output
             print(f"{train['departure_time']}---->{train['arrival_time']} ({train['journey_length']} minutes) [{train['departure_status']}]")
-        else:
-            print("Error retrieving train information.")
+    else:
+        print("Error retrieving train information.")
 
 
