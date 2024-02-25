@@ -58,7 +58,7 @@ def disp_train_info():
             train_time_text = []
             if train_data:
                 for train in train_data:
-                    destination_text_line = (f"Destination: {train['destination']},Plat {train['departure_platform']}")
+                    destination_text_line = (f"To: {train['destination']},Plat {train['departure_platform']}")
                     train_time_text_line = (f"{train['departure_time']}---->{train['arrival_time']} ({train['journey_length']} min) [{train['departure_status']}]")
                     destination_text.append(destination_text_line)
                     train_time_text.append(train_time_text_line)
@@ -94,14 +94,15 @@ def disp_train_info():
         epd2in7_V2.epdconfig.module_exit(cleanup=True)
         exit()
 
-def idle_disp():
+def initialising_disp():
     try:
         epd.init_Fast()
         epd.Clear()
         Himage = Image.new('1', (epd.height, epd.width), 255)  # 255: clear the frame
         draw = ImageDraw.Draw(Himage)
-        draw.text((50, 50), 'sleeping...', font = font20, fill = 0)
+        draw.text((50, 50), 'initialising...', font = font20, fill = 0)
         epd.display_Base(epd.getbuffer(Himage))
+        sleep(2)
         epd.init()   
         epd.sleep()
     except IOError as e:
@@ -118,7 +119,7 @@ def run_disp_train_info():
     Timer(INTERVAL_SECONDS, run_disp_train_info).start()
 
 if __name__ == "__main__":
-    sleep(3)
+    initialising_disp()
     run_disp_train_info()
     try:
         while True:
