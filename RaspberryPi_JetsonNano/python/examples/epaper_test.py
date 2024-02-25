@@ -63,8 +63,8 @@ def disp_train_info():
                     destination_text.append(destination_text_line)
                     train_time_text.append(train_time_text_line)
                     # Modified formatting for desired output
-                else:
-                    print("Error retrieving train information.")
+            else:
+                print("Error retrieving train information.")
             # epd.init()
             
             
