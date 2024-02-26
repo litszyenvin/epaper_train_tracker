@@ -22,7 +22,7 @@ import traceback
 
 logging.basicConfig(level=logging.DEBUG)
 
-INTERVAL_SECONDS = 60
+INTERVAL_SECONDS = 120
 button = Button(5)  # Replace 2 with your button's GPIO pin number
 epd = epd2in7_V2.EPD()
 font14 = ImageFont.truetype(os.path.join(picdir, 'Roboto-Regular.ttf'), 14)
