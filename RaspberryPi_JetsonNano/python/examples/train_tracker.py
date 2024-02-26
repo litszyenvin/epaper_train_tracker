@@ -30,13 +30,13 @@ def collect_train_data(number_of_trains, url, username, password, max_retries=3,
                     departureIsRealtime = False
                     serviceIsCancelled = False
                     if 'cancelReasonCode' in locationDetail:
-                        departureTime = locationDetail['gbttBookedArrival']
+                        departureTime = locationDetail['gbttBookedDeparture']
                         serviceIsCancelled = True
                     elif 'realtimeDeparture' in locationDetail:
-                        departureTime = locationDetail['realtimeArrival']
+                        departureTime = locationDetail['realtimeDeparture']
                         departureIsRealtime = True
                     else:
-                        departureTime = locationDetail['gbttBookedArrival']
+                        departureTime = locationDetail['gbttBookedDeparture']
 
                     departurePlatform = locationDetail['platform']
 
