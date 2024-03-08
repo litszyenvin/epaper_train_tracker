@@ -20,9 +20,9 @@ from waveshare_epd import epd2in7_V2
 from PIL import Image,ImageDraw,ImageFont
 import traceback
 
-logging.basicConfig(level=logging.DEBUG)
+# logging.basicConfig(level=logging.DEBUG)
 
-INTERVAL_SECONDS = 120
+INTERVAL_SECONDS = 300
 button = Button(5)  # Replace 2 with your button's GPIO pin number
 epd = epd2in7_V2.EPD()
 font14 = ImageFont.truetype(os.path.join(picdir, 'Roboto-Regular.ttf'), 14)
