@@ -63,7 +63,7 @@ def collect_train_data(number_of_trains, url, username, password, max_retries=3,
                         if 'locations' in train_services_data:
                             locations = train_services_data['locations']
                             for location in locations:
-                                if location['description'] == "St Pancras International":
+                                if location['description'] == "Farringdon": #TODO make it a input arguement
                                     if 'realtimeArrival' in location:
                                         arrivalTime = location['realtimeArrival']
                                     else:
