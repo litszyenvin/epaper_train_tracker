@@ -132,7 +132,7 @@ def is_later_than_current_time(hhmm_string):
 if __name__ == "__main__":
     url_head = "https://api.rtt.io/api/v1/json/search/"
     origin = 'SAC'
-    destination = 'STP'
+    destination = 'ZFD'
     username = "rttapi_litszyenvin"
     password = "bec5d38d598f2a3518962fedf8345569696cb0bf"
     number_of_trains = 4
