@@ -6,117 +6,161 @@ import time
 def collect_train_data(number_of_trains, url, username, password, max_retries=3, retry_delay=2):
     # Create a session object
     session = requests.Session()
-    # Set up the HTTP Basic authentication credentials
     session.auth = (username, password)
+    session.headers.update({"Accept": "application/json"})
 
     for attempt in range(max_retries):
         try:
             # Send a GET request to the HTTPS endpoint
-            response = session.get(url)
+            response = session.get(url, timeout=15)
+
             # Check if the request was successful (status code 200)
             if response.status_code == 200:
-                # Parse the JSON response
-                data = json.loads(response.text)
+                # Parse the JSON response safely
+                try:
+                    data = response.json()
+                except Exception:
+                    data = json.loads(response.text)
+
+                # --- FIX: handle "services": null safely ---
+                services = data.get('services') or []
+                if not services:
+                    print("No services returned for this query.")
+                    return []
+
                 # Initialize an empty list to store train details
                 train_details = []
-
-                services = data['services']
                 count = 0
+
                 for service in services:
-                    locationDetail = service['locationDetail']
-                    serviceUid = service['serviceUid']
-                    runDate = service['runDate']
-
-                    departureIsRealtime = False
-                    serviceIsCancelled = False
-                    if 'cancelReasonCode' in locationDetail:
-                        departureTime = locationDetail['gbttBookedDeparture']
-                        serviceIsCancelled = True
-                    elif 'realtimeDeparture' in locationDetail:
-                        departureTime = locationDetail['realtimeDeparture']
-                        departureIsRealtime = True
-                    else:
-                        departureTime = locationDetail['gbttBookedDeparture']
-
-                    departurePlatform = locationDetail['platform']
-
                     try:
-                        next_day = locationDetail['gbttBookedDepartureNextDay']
-                    except:
-                        next_day = False
+                        locationDetail = service.get('locationDetail') or {}
+                        serviceUid = service.get('serviceUid')
+                        runDate = service.get('runDate')
 
-                    if is_later_than_current_time(departureTime) or next_day == True:
-                        # Extract relevant information
-                        train_info = {
-                            "destination": locationDetail['destination'][0]['description'],
-                            "departure_status": "Scheduled" if not departureIsRealtime and not serviceIsCancelled else ("Live" if departureIsRealtime else "Cancelled"),
-                            "departure_time": departureTime,
-                            "departure_platform": departurePlatform
-                        }
+                        if not serviceUid or not runDate or not locationDetail:
+                            continue
 
-                        # Get further information for arrival time and journey length
-                        train_service_url = f"https://api.rtt.io/api/v1/json/service/{serviceUid}/{runDate[:4]}/{runDate[5:7]}/{runDate[8:10]}"
-                        ftrain_service_response = session.get(train_service_url)
-                        train_services_data = json.loads(ftrain_service_response.text)
+                        departureIsRealtime = False
+                        serviceIsCancelled = False
 
-                        # Check if 'locations' field is present
-                        if 'locations' in train_services_data:
-                            locations = train_services_data['locations']
+                        if 'cancelReasonCode' in locationDetail:
+                            departureTime = locationDetail.get('gbttBookedDeparture')
+                            serviceIsCancelled = True
+                        elif 'realtimeDeparture' in locationDetail:
+                            departureTime = locationDetail.get('realtimeDeparture')
+                            departureIsRealtime = True
+                        else:
+                            departureTime = locationDetail.get('gbttBookedDeparture')
+
+                        if not (isinstance(departureTime, str) and len(departureTime) >= 4):
+                            continue
+
+                        departurePlatform = locationDetail.get('platform')
+                        next_day = bool(locationDetail.get('gbttBookedDepartureNextDay', False))
+
+                        if is_later_than_current_time(departureTime) or next_day is True:
+                            # Extract relevant information
+                            destination_desc = "Unknown"
+                            dest_list = locationDetail.get('destination') or []
+                            if dest_list and isinstance(dest_list[0], dict):
+                                destination_desc = dest_list[0].get('description', 'Unknown')
+
+                            train_info = {
+                                "destination": destination_desc,
+                                "departure_status": (
+                                    "Scheduled"
+                                    if not departureIsRealtime and not serviceIsCancelled
+                                    else ("Live" if departureIsRealtime else "Cancelled")
+                                ),
+                                "departure_time": departureTime,
+                                "departure_platform": departurePlatform
+                            }
+
+                            # Build per-service detail URL
+                            train_service_url = (
+                                f"https://api.rtt.io/api/v1/json/service/"
+                                f"{serviceUid}/{runDate[:4]}/{runDate[5:7]}/{runDate[8:10]}"
+                            )
+
+                            # Fetch per-service details with guards
+                            ftrain_service_response = session.get(train_service_url, timeout=15)
+                            if ftrain_service_response.status_code != 200:
+                                print(f"Detail fetch failed: {ftrain_service_response.status_code} for {train_service_url}")
+                                continue
+
+                            try:
+                                train_services_data = ftrain_service_response.json()
+                            except Exception:
+                                try:
+                                    train_services_data = json.loads(ftrain_service_response.text)
+                                except Exception:
+                                    train_services_data = {}
+
+                            # Check if 'locations' field is present and iterable
+                            locations = train_services_data.get('locations') or []
+                            if not isinstance(locations, list) or not locations:
+                                continue
+
+                            # Find arrival at Farringdon (same as before)
+                            arrivalTime = None
                             for location in locations:
-                                if location['description'] == "Farringdon": #TODO make it a input arguement
-                                    if 'realtimeArrival' in location:
-                                        arrivalTime = location['realtimeArrival']
-                                    else:
-                                        arrivalTime = location['gbttBookedArrival']
-                                    
-                                    journeyLength = calculate_elapsed_minutes(departureTime, arrivalTime)
+                                if location.get('description') == "Farringdon":
+                                    arrivalTime = location.get('realtimeArrival') or location.get('gbttBookedArrival')
+                                    break
 
-                                    # Add arrival time and journey length to train info
-                                    train_info["arrival_time"] = arrivalTime
-                                    train_info["journey_length"] = journeyLength
+                            if not (isinstance(arrivalTime, str) and len(arrivalTime) >= 4):
+                                continue
 
-                                    break  # Break after finding arrival info
+                            # Journey length (with safer wrap handling)
+                            journeyLength = calculate_elapsed_minutes(departureTime, arrivalTime)
 
-                        # Append train info to the list
-                        train_details.append(train_info)
-                        count += 1
-                        if count == number_of_trains:
-                            break
+                            train_info["arrival_time"] = arrivalTime
+                            train_info["journey_length"] = journeyLength
 
+                            # Append train info to the list
+                            train_details.append(train_info)
+                            count += 1
+                            if count == number_of_trains:
+                                return train_details
+
+                    except Exception as e:
+                        print(f"Skipped a service due to error: {e}")
+                        continue
+
+                # ✅ Correct indentation: this return closes the for-loop, not the try
                 return train_details
 
             else:
-                # Print an error message
                 print(f"Request failed with status code {response.status_code}")
 
         except requests.exceptions.RequestException as e:
-            # Print the error message
             print(f"Attempt {attempt+1}/{max_retries}: An error occurred: {e}")
-
-            # Wait before retrying
             time.sleep(retry_delay)
 
     # Return empty list if max retries reached
     else:
         return []
 
+
 def calculate_elapsed_minutes(start, end):
+    """Handles midnight wrap (00:xx next day)."""
     start_hours = int(start[:2])
     start_minutes = int(start[2:])
     end_hours = int(end[:2])
     end_minutes = int(end[2:])
 
-    if start_hours == 23 and end_hours < 1:
-        end_hours += 24
+    start_total = start_hours * 60 + start_minutes
+    end_total = end_hours * 60 + end_minutes
 
-    start_total_minutes = start_hours * 60 + start_minutes
-    end_total_minutes = end_hours * 60 + end_minutes
+    if end_total < start_total:
+        end_total += 24 * 60
 
-    elapsed_minutes = end_total_minutes - start_total_minutes
+    return end_total - start_total
 
-    return elapsed_minutes
 
 def is_later_than_current_time(hhmm_string):
+    """Compare a HHMM string to current time safely."""
     current_time = datetime.now().strftime("%H%M")
     hhmm_hours = int(hhmm_string[:2])
     hhmm_minutes = int(hhmm_string[2:])
@@ -139,17 +183,22 @@ if __name__ == "__main__":
 
     current_datetime = datetime.now()
     formatted_datetime = current_datetime.strftime("%Y/%m/%d/%H%M")
-    url = url_head + origin + '/to/' + destination +'/'+ formatted_datetime
-    # url = 'https://api.rtt.io/api/v1/json/search/SAC/to/STP/2024/02/21/1310'
+    url = url_head + origin + '/to/' + destination + '/' + formatted_datetime
+    # Example: url = 'https://api.rtt.io/api/v1/json/search/SAC/to/STP/2024/02/21/1310'
+
     train_data = collect_train_data(number_of_trains, url, username, password)
 
     if train_data:
         print("Train information:")
         for train in train_data:
-            print(f"Destination: {train['destination']},Plat {train['departure_platform']}")
-            # Modified formatting for desired output
-            print(f"{train['departure_time']}---->{train['arrival_time']} ({train['journey_length']} minutes) [{train['departure_status']}]")
+            dest = train.get('destination', 'Unknown')
+            plat = train.get('departure_platform', '?')
+            dep = train.get('departure_time', '????')
+            arr = train.get('arrival_time', '????')
+            jl = train.get('journey_length', '?')
+            status = train.get('departure_status', '?')
+
+            print(f"Destination: {dest}, Plat {plat}")
+            print(f"{dep}---->{arr} ({jl} minutes) [{status}]")
     else:
-        print("Error retrieving train information.")
-
-
+        print("No train information found or error retrieving train information.")
