@@ -300,8 +300,8 @@ def disp_train_info():
                 journey = t.get("journey_length", "?")
                 status = t.get("departure_status", "?")
 
-                line1 = f"Plat {platform}  To: {destination}"
-                line2 = f"{dep} -> {arr} ({journey} min) [{status}]"
+                line1 = f"{dep} -> {arr} {journey} min   Plat {platform}"
+                line2 = f"{destination} [{status}]"
 
                 draw.text((5, y), line1, font=font16, fill=0)
                 draw.text((5, y + 20), line2, font=font14, fill=0)
