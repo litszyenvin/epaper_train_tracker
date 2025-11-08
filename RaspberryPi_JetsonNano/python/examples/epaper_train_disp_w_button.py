@@ -293,15 +293,18 @@ def disp_train_info():
         else:
             y = 0
             for t in target:
-                dest = f"To: {t.get('destination','?')},Plat {t.get('departure_platform','?')}"
-                row = (
-                    f"{t.get('departure_time','????')}---->"
-                    f"{t.get('arrival_time','????')} "
-                    f"({t.get('journey_length','?')} min) "
-                    f"[{t.get('departure_status','?')}]"
-                )
-                draw.text((5, y), dest, font=font14, fill=0)
-                draw.text((5, y + 20), row, font=font16, fill=0)
+                platform = t.get("departure_platform", "?")
+                destination = t.get("destination", "?")
+                dep = t.get("departure_time", "????")
+                arr = t.get("arrival_time", "????")
+                journey = t.get("journey_length", "?")
+                status = t.get("departure_status", "?")
+
+                line1 = f"Plat {platform}  To: {destination}"
+                line2 = f"{dep} -> {arr} ({journey} min) [{status}]"
+
+                draw.text((5, y), line1, font=font16, fill=0)
+                draw.text((5, y + 20), line2, font=font14, fill=0)
                 y += 40
 
         draw.text((5, 160), "updated:" + formatted_datetime, font=font14, fill=0)
