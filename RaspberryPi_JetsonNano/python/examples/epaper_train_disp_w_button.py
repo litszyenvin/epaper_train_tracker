@@ -178,6 +178,13 @@ def _buffer_bytes(buf):
         # Some drivers already return bytes/bytearray
         return buf if isinstance(buf, (bytes, bytearray)) else bytes(bytearray(buf))
 
+def _prepare_image(image):
+    """Rotate the frame 180° to match the panel orientation."""
+    try:
+        return image.rotate(180)
+    except Exception:
+        return image
+
 def _maybe_display(Himage):
     """Skip refresh if identical to last frame."""
     global _last_frame_hash, _refresh_count
@@ -189,7 +196,8 @@ def _maybe_display(Himage):
         except Exception:
             pass
 
-    buf = epd.getbuffer(Himage)
+    prepared = _prepare_image(Himage)
+    buf = epd.getbuffer(prepared)
     h = hashlib.md5(_buffer_bytes(buf)).hexdigest()
     if h == _last_frame_hash:
         # No visual change; avoid refresh
@@ -212,7 +220,8 @@ def _draw_sleeping_screen():
         draw = ImageDraw.Draw(Himage)
         draw.text((30, 60), "I'm sleeping...", font=font20, fill=0)
         draw.text((30, 90), "(press any button to refresh)", font=font14, fill=0)
-        epd.display_Base(epd.getbuffer(Himage))
+        prepared = _prepare_image(Himage)
+        epd.display_Base(epd.getbuffer(prepared))
     except Exception as e:
         print(f"Failed to draw sleeping screen: {e}")
     finally:
@@ -359,7 +368,8 @@ def initialising_disp():
         Himage = Image.new("1", (epd.height, epd.width), 255)
         draw = ImageDraw.Draw(Himage)
         draw.text((40, 60), "initialising...", font=font20, fill=0)
-        epd.display_Base(epd.getbuffer(Himage))
+        prepared = _prepare_image(Himage)
+        epd.display_Base(epd.getbuffer(prepared))
     except Exception as e:
         print(f"initialising_disp error: {e}")
     finally:
