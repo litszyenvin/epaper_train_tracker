@@ -42,15 +42,15 @@ INTERVAL_SECONDS_DEFAULT = 300  # 5 min
 # Faster during the key morning window
 INTERVAL_SECONDS_MORNING = 120  # 2 min
 
-# Sleep window: pause auto refresh, show sleeping msg, Wi-Fi OFF
-SLEEP_START_HM = (15, 0)  # 15:00
-SLEEP_END_HM = (6, 0)     # 06:00 (next day)
+# Sleep window: pause auto refresh, show sleeping msg
+SLEEP_START_HM = (21, 0)  # 21:00
+SLEEP_END_HM = (5, 0)     # 05:00 (next day)
 
 # Morning behavior (local time on the Pi)
 MORNING_WINDOW_START_HM = (7, 0)   # 07:00
-MORNING_WINDOW_END_HM   = (8, 15)  # 08:15
+MORNING_WINDOW_END_HM   = (8, 45)  # 08:45
 TARGET_DEPART_START_HM  = (7, 45)  # 07:45
-TARGET_DEPART_END_HM    = (8, 15)  # 08:15
+TARGET_DEPART_END_HM    = (8, 45)  # 08:45
 FAST_MAX_MINUTES = 30
 MORNING_FETCH_COUNT = 20  # fetch more so we can filter properly
 
@@ -223,7 +223,7 @@ def _draw_sleeping_screen():
             pass
 
 def _schedule_manual_sleep_revert():
-    """After manual wake during sleep window, revert to sleeping screen and Wi-Fi off."""
+    """After manual wake during sleep window, revert to sleeping screen."""
     global _manual_sleep_timer
     if _manual_sleep_timer and _manual_sleep_timer.is_alive():
         _manual_sleep_timer.cancel()
@@ -232,13 +232,12 @@ def _schedule_manual_sleep_revert():
 
 def _sleeping_revert_callback():
     _draw_sleeping_screen()
-    wifi_off()
 
 # ----------------------------
 # Data filtering (morning fast-train mode)
 # ----------------------------
 def _apply_morning_filter(train_list):
-    """Keep trains with journey < FAST_MAX_MINUTES and departure in 07:45–08:15."""
+    """Keep trains with journey < FAST_MAX_MINUTES and departure in 07:45–08:45."""
     filtered = []
     for t in train_list:
         dep = t.get("departure_time")
@@ -262,7 +261,7 @@ def disp_train_info():
         formatted_datetime = now.strftime("%Y/%m/%d/%H%M")
         url = f"{url_head}{ORIGIN}/to/{DESTINATION}/{formatted_datetime}"
 
-        # Fetch more during morning window so we can subset to 07:45–08:15
+        # Fetch more during morning window so we can subset to 07:45–08:45
         fetch_count = MORNING_FETCH_COUNT if _is_morning_window() else NUMBER_OF_TRAINS
         trains = collect_train_data(fetch_count, url, username, password)
 
@@ -307,13 +306,11 @@ def disp_train_info():
 # ----------------------------
 # Scheduler + buttons
 # ----------------------------
-def _safe_refresh(trigger="timer", ensure_wifi=False):
+def _safe_refresh(trigger="timer"):
     """Run disp_train_info() if not already running."""
     if _refresh_lock.acquire(blocking=False):
         try:
             print(f"Refreshing ({trigger})...")
-            if ensure_wifi:
-                wifi_on()
             disp_train_info()
         finally:
             _refresh_lock.release()
@@ -323,8 +320,8 @@ def _safe_refresh(trigger="timer", ensure_wifi=False):
 def _button_pressed_cb(pin):
     print(f"Button on GPIO{pin} pressed")
     if _is_sleep_window():
-        # Manual wake: Wi-Fi on, fetch, display, then revert after 15 min
-        _safe_refresh(trigger=f"button{pin}", ensure_wifi=True)
+        # Manual wake: fetch, display, then revert after 15 min
+        _safe_refresh(trigger=f"button{pin}")
         _schedule_manual_sleep_revert()
     else:
         _safe_refresh(trigger=f"button{pin}")
@@ -332,18 +329,14 @@ def _button_pressed_cb(pin):
 def run_loop():
     """Main repeating scheduler with sleep-window gating and dynamic intervals."""
     if _is_sleep_window():
-        print("Sleep window (15:00–06:00): showing sleeping screen, Wi-Fi off, pausing auto refresh.")
-        wifi_off()
+        print("Sleep window (21:00–05:00): showing sleeping screen and pausing auto refresh.")
         _draw_sleeping_screen()
         # Schedule a wake-up at SLEEP_END_HM
         Timer(_seconds_until(SLEEP_END_HM), run_loop).start()
         return
 
-    # Active window: keep Wi-Fi ON only during fetch; the rest of the time it's fine to leave it on.
-    # If you want to always toggle, uncomment wifi_on(); and wifi_off() after refresh.
-    # wifi_on()
+    # Active window: perform scheduled refreshes while awake.
     _safe_refresh(trigger="timer")
-    # wifi_off()
 
     # Schedule next run with dynamic interval
     Timer(_next_interval_seconds(), run_loop).start()
