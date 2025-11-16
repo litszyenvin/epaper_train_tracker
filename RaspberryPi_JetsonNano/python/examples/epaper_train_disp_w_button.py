@@ -42,15 +42,15 @@ INTERVAL_SECONDS_DEFAULT = 300  # 5 min
 # Faster during the key morning window
 INTERVAL_SECONDS_MORNING = 120  # 2 min
 
-# Sleep window: pause auto refresh, show sleeping msg, Wi-Fi OFF
-SLEEP_START_HM = (15, 0)  # 15:00
-SLEEP_END_HM = (6, 0)     # 06:00 (next day)
+# Sleep window: pause auto refresh, show sleeping msg
+SLEEP_START_HM = (21, 0)  # 21:00
+SLEEP_END_HM = (5, 0)     # 05:00 (next day)
 
 # Morning behavior (local time on the Pi)
 MORNING_WINDOW_START_HM = (7, 0)   # 07:00
-MORNING_WINDOW_END_HM   = (8, 15)  # 08:15
+MORNING_WINDOW_END_HM   = (8, 45)  # 08:45
 TARGET_DEPART_START_HM  = (7, 45)  # 07:45
-TARGET_DEPART_END_HM    = (8, 15)  # 08:15
+TARGET_DEPART_END_HM    = (8, 45)  # 08:45
 FAST_MAX_MINUTES = 30
 MORNING_FETCH_COUNT = 20  # fetch more so we can filter properly
 
@@ -178,6 +178,13 @@ def _buffer_bytes(buf):
         # Some drivers already return bytes/bytearray
         return buf if isinstance(buf, (bytes, bytearray)) else bytes(bytearray(buf))
 
+def _prepare_image(image):
+    """Rotate the frame 180° to match the panel orientation."""
+    try:
+        return image.rotate(180)
+    except Exception:
+        return image
+
 def _maybe_display(Himage):
     """Skip refresh if identical to last frame."""
     global _last_frame_hash, _refresh_count
@@ -189,7 +196,8 @@ def _maybe_display(Himage):
         except Exception:
             pass
 
-    buf = epd.getbuffer(Himage)
+    prepared = _prepare_image(Himage)
+    buf = epd.getbuffer(prepared)
     h = hashlib.md5(_buffer_bytes(buf)).hexdigest()
     if h == _last_frame_hash:
         # No visual change; avoid refresh
@@ -211,8 +219,10 @@ def _draw_sleeping_screen():
         Himage = Image.new("1", (epd.height, epd.width), 255)
         draw = ImageDraw.Draw(Himage)
         draw.text((30, 60), "I'm sleeping...", font=font20, fill=0)
-        draw.text((30, 90), "(press any button to refresh)", font=font14, fill=0)
-        epd.display_Base(epd.getbuffer(Himage))
+        draw.text((30, 90), "maybe you should too...", font=font20, fill=0)
+        draw.text((30, 120), "(press any button to refresh)", font=font14, fill=0)
+        prepared = _prepare_image(Himage)
+        epd.display_Base(epd.getbuffer(prepared))
     except Exception as e:
         print(f"Failed to draw sleeping screen: {e}")
     finally:
@@ -223,7 +233,7 @@ def _draw_sleeping_screen():
             pass
 
 def _schedule_manual_sleep_revert():
-    """After manual wake during sleep window, revert to sleeping screen and Wi-Fi off."""
+    """After manual wake during sleep window, revert to sleeping screen."""
     global _manual_sleep_timer
     if _manual_sleep_timer and _manual_sleep_timer.is_alive():
         _manual_sleep_timer.cancel()
@@ -232,13 +242,12 @@ def _schedule_manual_sleep_revert():
 
 def _sleeping_revert_callback():
     _draw_sleeping_screen()
-    wifi_off()
 
 # ----------------------------
 # Data filtering (morning fast-train mode)
 # ----------------------------
 def _apply_morning_filter(train_list):
-    """Keep trains with journey < FAST_MAX_MINUTES and departure in 07:45–08:15."""
+    """Keep trains with journey < FAST_MAX_MINUTES and departure in 07:45–08:45."""
     filtered = []
     for t in train_list:
         dep = t.get("departure_time")
@@ -262,7 +271,7 @@ def disp_train_info():
         formatted_datetime = now.strftime("%Y/%m/%d/%H%M")
         url = f"{url_head}{ORIGIN}/to/{DESTINATION}/{formatted_datetime}"
 
-        # Fetch more during morning window so we can subset to 07:45–08:15
+        # Fetch more during morning window so we can subset to 07:45–08:45
         fetch_count = MORNING_FETCH_COUNT if _is_morning_window() else NUMBER_OF_TRAINS
         trains = collect_train_data(fetch_count, url, username, password)
 
@@ -285,15 +294,18 @@ def disp_train_info():
         else:
             y = 0
             for t in target:
-                dest = f"To: {t.get('destination','?')},Plat {t.get('departure_platform','?')}"
-                row = (
-                    f"{t.get('departure_time','????')}---->"
-                    f"{t.get('arrival_time','????')} "
-                    f"({t.get('journey_length','?')} min) "
-                    f"[{t.get('departure_status','?')}]"
-                )
-                draw.text((5, y), dest, font=font14, fill=0)
-                draw.text((5, y + 20), row, font=font16, fill=0)
+                platform = t.get("departure_platform", "?")
+                destination = t.get("destination", "?")
+                dep = t.get("departure_time", "????")
+                arr = t.get("arrival_time", "????")
+                journey = t.get("journey_length", "?")
+                status = t.get("departure_status", "?")
+
+                line1 = f"{dep} -> {arr}   [{journey} min]   Plat {platform}"
+                line2 = f"{destination} [{status}]"
+
+                draw.text((5, y), line1, font=font16, fill=0)
+                draw.text((5, y + 20), line2, font=font14, fill=0)
                 y += 40
 
         draw.text((5, 160), "updated:" + formatted_datetime, font=font14, fill=0)
@@ -307,13 +319,11 @@ def disp_train_info():
 # ----------------------------
 # Scheduler + buttons
 # ----------------------------
-def _safe_refresh(trigger="timer", ensure_wifi=False):
+def _safe_refresh(trigger="timer"):
     """Run disp_train_info() if not already running."""
     if _refresh_lock.acquire(blocking=False):
         try:
             print(f"Refreshing ({trigger})...")
-            if ensure_wifi:
-                wifi_on()
             disp_train_info()
         finally:
             _refresh_lock.release()
@@ -323,8 +333,8 @@ def _safe_refresh(trigger="timer", ensure_wifi=False):
 def _button_pressed_cb(pin):
     print(f"Button on GPIO{pin} pressed")
     if _is_sleep_window():
-        # Manual wake: Wi-Fi on, fetch, display, then revert after 15 min
-        _safe_refresh(trigger=f"button{pin}", ensure_wifi=True)
+        # Manual wake: fetch, display, then revert after 15 min
+        _safe_refresh(trigger=f"button{pin}")
         _schedule_manual_sleep_revert()
     else:
         _safe_refresh(trigger=f"button{pin}")
@@ -332,18 +342,14 @@ def _button_pressed_cb(pin):
 def run_loop():
     """Main repeating scheduler with sleep-window gating and dynamic intervals."""
     if _is_sleep_window():
-        print("Sleep window (15:00–06:00): showing sleeping screen, Wi-Fi off, pausing auto refresh.")
-        wifi_off()
+        print("Sleep window (21:00–05:00): showing sleeping screen and pausing auto refresh.")
         _draw_sleeping_screen()
         # Schedule a wake-up at SLEEP_END_HM
         Timer(_seconds_until(SLEEP_END_HM), run_loop).start()
         return
 
-    # Active window: keep Wi-Fi ON only during fetch; the rest of the time it's fine to leave it on.
-    # If you want to always toggle, uncomment wifi_on(); and wifi_off() after refresh.
-    # wifi_on()
+    # Active window: perform scheduled refreshes while awake.
     _safe_refresh(trigger="timer")
-    # wifi_off()
 
     # Schedule next run with dynamic interval
     Timer(_next_interval_seconds(), run_loop).start()
@@ -366,7 +372,8 @@ def initialising_disp():
         Himage = Image.new("1", (epd.height, epd.width), 255)
         draw = ImageDraw.Draw(Himage)
         draw.text((40, 60), "initialising...", font=font20, fill=0)
-        epd.display_Base(epd.getbuffer(Himage))
+        prepared = _prepare_image(Himage)
+        epd.display_Base(epd.getbuffer(prepared))
     except Exception as e:
         print(f"initialising_disp error: {e}")
     finally:
