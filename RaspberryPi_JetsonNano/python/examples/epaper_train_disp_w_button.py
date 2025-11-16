@@ -9,6 +9,7 @@ import hashlib
 import subprocess
 import requests
 import logging
+import typing
 from time import sleep
 from datetime import datetime, timedelta
 from threading import Timer, Lock
@@ -63,12 +64,83 @@ FULL_REFRESH_EVERY = 12
 # Trains to show on screen
 NUMBER_OF_TRAINS = 4
 
-# RTT settings
+# RTT settings (defaults; can be overridden by config.toml)
 url_head = "https://api.rtt.io/api/v1/json/search/"
 ORIGIN = "SAC"
 DESTINATION = "ZFD"
 username = "rttapi_litszyenvin"  # consider env vars
 password = "bec5d38d598f2a3518962fedf8345569696cb0bf"  # consider env vars
+
+
+def _load_toml_config(config_path: str) -> dict:
+    """Load a TOML config file. Uses stdlib tomllib (Py3.11+) if available,
+    otherwise falls back to the third-party 'toml' package. Returns an empty
+    dict on error so defaults remain in effect.
+    """
+    try:
+        try:
+            import tomllib as _toml
+        except Exception:
+            import toml as _toml
+
+        # tomllib.load expects a binary file object; toml.load expects text
+        if hasattr(_toml, "loads") and hasattr(_toml, "load"):
+            # Best-effort: open in binary and delegate to load (tomllib) or
+            # open text and call load (third-party toml)
+            try:
+                # try binary load first (tomllib)
+                with open(config_path, "rb") as f:
+                    return _toml.load(f)
+            except Exception:
+                try:
+                    with open(config_path, "r", encoding="utf-8") as f:
+                        return _toml.load(f)
+                except Exception:
+                    return {}
+        else:
+            return {}
+    except Exception as e:
+        logging.info(f"TOML loader not available or failed to read {config_path}: {e}")
+        return {}
+
+
+# Attempt to load config.toml from the examples folder (same dir as this file)
+_example_cfg_path = os.path.join(os.path.dirname(__file__), "config.toml")
+_cfg = _load_toml_config(_example_cfg_path)
+
+# Helper to read a scalar with default
+def _cfg_get(key, default=None):
+    return _cfg.get(key, default)
+
+# Helper to read a HM tuple/list as a (h,m) tuple
+def _cfg_get_hm(key, default):
+    v = _cfg.get(key)
+    if isinstance(v, (list, tuple)) and len(v) >= 2:
+        try:
+            return (int(v[0]), int(v[1]))
+        except Exception:
+            return default
+    return default
+
+# Override defaults from TOML when present
+INTERVAL_SECONDS_DEFAULT = int(_cfg_get("INTERVAL_SECONDS_DEFAULT", INTERVAL_SECONDS_DEFAULT))
+INTERVAL_SECONDS_MORNING = int(_cfg_get("INTERVAL_SECONDS_MORNING", 120))
+SLEEP_START_HM = _cfg_get_hm("SLEEP_START_HM", (21, 0))
+SLEEP_END_HM = _cfg_get_hm("SLEEP_END_HM", (5, 0))
+MORNING_WINDOW_START_HM = _cfg_get_hm("MORNING_WINDOW_START_HM", (7, 0))
+MORNING_WINDOW_END_HM = _cfg_get_hm("MORNING_WINDOW_END_HM", (8, 45))
+TARGET_DEPART_START_HM = _cfg_get_hm("TARGET_DEPART_START_HM", (7, 45))
+TARGET_DEPART_END_HM = _cfg_get_hm("TARGET_DEPART_END_HM", (8, 45))
+FAST_MAX_MINUTES = int(_cfg_get("FAST_MAX_MINUTES", 30))
+MORNING_FETCH_COUNT = int(_cfg_get("MORNING_FETCH_COUNT", 20))
+MANUAL_DISPLAY_SECONDS = int(_cfg_get("MANUAL_DISPLAY_SECONDS", 15 * 60))
+FULL_REFRESH_EVERY = int(_cfg_get("FULL_REFRESH_EVERY", 12))
+NUMBER_OF_TRAINS = int(_cfg_get("NUMBER_OF_TRAINS", 4))
+url_head = str(_cfg_get("url_head", url_head))
+ORIGIN = str(_cfg_get("ORIGIN", ORIGIN))
+DESTINATION = str(_cfg_get("DESTINATION", DESTINATION))
+username = str(_cfg_get("username", username))
+password = str(_cfg_get("password", password))
 
 # ----------------------------
 # Buttons (Waveshare 4-key HAT: KEY0..KEY3)
