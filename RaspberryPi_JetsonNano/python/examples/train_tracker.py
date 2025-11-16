@@ -1,13 +1,20 @@
 import requests
 import json
+import re
 from datetime import datetime
 import time
 
-def collect_train_data(number_of_trains, url, username, password, max_retries=3, retry_delay=2):
+def collect_train_data(number_of_trains, url, username, password, destination_code=None, max_retries=3, retry_delay=2):
     # Create a session object
     session = requests.Session()
     session.auth = (username, password)
     session.headers.update({"Accept": "application/json"})
+
+    # If destination_code is not provided try to infer it from the URL (/to/<CODE>/)
+    if not destination_code:
+        m = re.search(r"/to/([^/]+)/", url)
+        if m:
+            destination_code = m.group(1)
 
     for attempt in range(max_retries):
         try:
@@ -102,12 +109,26 @@ def collect_train_data(number_of_trains, url, username, password, max_retries=3,
                             if not isinstance(locations, list) or not locations:
                                 continue
 
-                            # Find arrival at Farringdon (same as before)
+                            # Find the arrival by station code (preferred) with fallbacks.
+                            # Try common station-code fields in the locations entries.
                             arrivalTime = None
+                            dest_code = (destination_code or "").upper()
                             for location in locations:
-                                if location.get('description') == "Farringdon":
-                                    arrivalTime = location.get('realtimeArrival') or location.get('gbttBookedArrival')
+                                # common fields that may contain a station code
+                                for code_field in ('crs', 'crsCode', 'stationCode', 'tiploc', 'locationCode', 'location_code'):
+                                    val = location.get(code_field)
+                                    if isinstance(val, str) and dest_code and val.upper() == dest_code:
+                                        arrivalTime = location.get('realtimeArrival') or location.get('gbttBookedArrival')
+                                        break
+                                if arrivalTime:
                                     break
+
+                            # Backwards-compatible fallback: match by textual description if code matching failed
+                            if not arrivalTime:
+                                for location in locations:
+                                    if destination_desc and isinstance(location.get('description'), str) and location.get('description') == destination_desc:
+                                        arrivalTime = location.get('realtimeArrival') or location.get('gbttBookedArrival')
+                                        break
 
                             if not (isinstance(arrivalTime, str) and len(arrivalTime) >= 4):
                                 continue
@@ -186,7 +207,7 @@ if __name__ == "__main__":
     url = url_head + origin + '/to/' + destination + '/' + formatted_datetime
     # Example: url = 'https://api.rtt.io/api/v1/json/search/SAC/to/STP/2024/02/21/1310'
 
-    train_data = collect_train_data(number_of_trains, url, username, password)
+    train_data = collect_train_data(number_of_trains, url, username, password, destination)
 
     if train_data:
         print("Train information:")
