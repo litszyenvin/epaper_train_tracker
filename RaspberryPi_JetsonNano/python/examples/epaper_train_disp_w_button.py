@@ -219,7 +219,8 @@ def _draw_sleeping_screen():
         Himage = Image.new("1", (epd.height, epd.width), 255)
         draw = ImageDraw.Draw(Himage)
         draw.text((30, 60), "I'm sleeping...", font=font20, fill=0)
-        draw.text((30, 90), "(press any button to refresh)", font=font14, fill=0)
+        draw.text((30, 90), "maybe you should too...", font=font20, fill=0)
+        draw.text((30, 120), "(press any button to refresh)", font=font14, fill=0)
         prepared = _prepare_image(Himage)
         epd.display_Base(epd.getbuffer(prepared))
     except Exception as e:
