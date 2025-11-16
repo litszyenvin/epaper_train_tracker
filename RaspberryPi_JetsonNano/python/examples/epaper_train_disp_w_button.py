@@ -380,7 +380,12 @@ def disp_train_info():
                 draw.text((5, y + 20), line2, font=font14, fill=0)
                 y += 40
 
-        draw.text((5, 160), "updated:" + formatted_datetime, font=font14, fill=0)
+        # Prefix update timestamp with origin and destination codes
+        try:
+            od_line = f"{ORIGIN} -> {DESTINATION}  updated: {formatted_datetime}"
+        except Exception:
+            od_line = "updated:" + formatted_datetime
+        draw.text((5, 160), od_line, font=font14, fill=0)
 
         # Display (skips if unchanged)
         _maybe_display(Himage)
