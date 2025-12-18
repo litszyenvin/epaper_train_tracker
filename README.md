@@ -114,23 +114,29 @@ Paste the following:
 Description=E-paper Train Display
 After=network.target dev-spidev0.0.device
 Wants=network.target
-
-[Service]
-User=pi
-WorkingDirectory=/home/pi/epaper_train_tracker/RaspberryPi_JetsonNano/python/examples
-Environment=PYTHONUNBUFFERED=1
-ExecStartPre=/usr/bin/nm-online -q --timeout=20
-ExecStart=/usr/bin/python3 /home/pi/epaper_train_tracker/RaspberryPi_JetsonNano/python/examples/epaper_train_disp_w_button.py
-Restart=on-failure
-RestartSec=5s
 StartLimitIntervalSec=60
 StartLimitBurst=5
+
+[Service]
+Type=simple
+User=traintrackpi
+WorkingDirectory=/home/traintrackpi/epaper_train_tracker/RaspberryPi_JetsonNano/python/examples
+Environment=PYTHONUNBUFFERED=1
+ExecStartPre=/bin/sh -c 'until ip route | grep -q "^default "; do sleep 1; done'
+ExecStart=/usr/bin/python3 -u /home/traintrackpi/epaper_train_tracker/RaspberryPi_JetsonNano/python/examples/epaper_train_disp_w_button.py
+Restart=on-failure
+RestartSec=5
 StandardOutput=journal
 StandardError=journal
 
 [Install]
 WantedBy=multi-user.target
 ```
+
+⚠️ **Important:** Before saving, modify the following to match your setup:
+- `User=traintrackpi` — change to your actual username (e.g., `pi`)
+- `WorkingDirectory` path — update if your cloned directory is in a different location
+- `ExecStart` path — must match your `WorkingDirectory`
 
 Enable it:
 
